@@ -1,0 +1,78 @@
+%{
+	#include "symbol.tab.h"
+	#include "parser.tab.h"
+	#include <string.h>
+	#include <stdlib.h>
+%}
+
+%option noyywrap 
+
+whiteSpace [ \t\n]+
+
+%s AuthorCond BookCond
+
+%%
+
+-> {
+	return(ARROW);
+}
+
+{whiteSpace} ;
+
+
+"%%"	{ BEGIN(AuthorCond); return(SEPARATOR_1); }
+"!!"  { BEGIN(0); return(SEPARATOR_2); }
+
+(0[1-9]|1[0-9]|2[0-9])-(0[1-9]|11|12)-(19|20)[0-9][0-9] {
+	yylval.string = strdup(yytext);
+	//printf("%s", yytext);
+	return(DATE);
+}
+
+<BookCond>\"[A-Za-z ]*\" {
+	yylval.string = strdup(yytext);
+	return(TITLE);
+}
+
+<BookCond>[0-9]{3}-[0-9]{5}[A-Z]{2} {
+	yylval.string = strdup(yytext);
+	return(CODE);
+}
+
+<AuthorCond>[A-Za-z]*([ ][A-Za-z]*)* {
+	yylval.string = strdup(yytext);
+	BEGIN(BookCond);
+	return(AUTHOR);
+}
+
+\"[a-zA-Z ]*\"[ ][-][ ] {
+	yylval.string = strdup(yytext);
+	return(NAME);
+}
+
+[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z] {
+	yylval.string = strdup(yytext);
+	return(FISCALCODE);
+}
+
+[0-9]{3}-[0-9]{5}[A-Z]{2} {
+	yylval.string = strdup(yytext);
+	return(LOANCODE);
+}
+
+\. { return(DOT); }
+":" { return(COLUMN); }
+";"	{ return(SEMICOLON); }
+"---" { BEGIN(AuthorCond);
+	return(DASH); }
+"("	{ return(OPEN_ROUND); }
+")"	{ return(CLOSE_ROUND); }
+(.|\n) { 
+    fprintf(stderr, "Character not found : %s \n",yytext);
+    exit(1);
+    }
+
+%%  
+
+
+
